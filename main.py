@@ -89,7 +89,7 @@ if __name__ == "__main__":
                     salary = f"Зарплата {salary_from or '-'} - {salary_to or '-'} {currency}"
                 print(f"{company} | {title} | {salary} | {url}")
 
-        elif value == "0":
+        elif value == "6":
             break
         else:
             print("Неверный ввод. Попробуйте снова.")
