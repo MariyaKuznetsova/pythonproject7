@@ -40,7 +40,7 @@ class DBManager:
                     vacancies.salary_from,
                     vacancies.salary_to,
                     vacancies.currency,
-                    vacancies_url AS vacancy_url
+                    vacancies.url AS vacancy_url
                 FROM vacancies
                 INNER JOIN employers ON vacancies.employer_id = employers.employer_id
                 ORDER BY company_name, vacancy_title
@@ -63,7 +63,7 @@ class DBManager:
             """
             )
             result = cur.fetchone()
-            return result[0] if result else  None
+            return result[0] if result else None
 
     def get_vacancies_with_higher_salary(self) -> List[tuple]:
         """Получение списка вакансий выше средней"""
@@ -84,7 +84,7 @@ class DBManager:
                 FROM vacancies
                 INNER JOIN employers ON vacancies.employer_id = employers.employer_id
                 WHERE
-                    (COALESCE(vacancies.salary_from, vacancies.salary_to) +
+                    ((COALESCE(vacancies.salary_from, vacancies.salary_to) +
                     COALESCE(vacancies.salary_to, vacancies.salary_from)) / 2 ) > %s
                 ORDER BY
                     ((COALESCE(vacancies.salary_from, vacancies.salary_to) +
@@ -111,6 +111,6 @@ class DBManager:
                 WHERE LOWER(vacancies.title) LIKE LOWER(%s)
                 ORDER BY company_name, vacancy_title
             """,
-                (f'%{keyword}%',),
+                (f"%{keyword}%",),
             )
             return cur.fetchall()
