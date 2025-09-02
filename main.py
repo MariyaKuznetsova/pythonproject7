@@ -4,39 +4,46 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-from config import DB_HOST, DB_PASSWORD, DB_PORT, DB_USER
+from config import DB_HOST, DB_PASSWORD, DB_PORT, DB_USER, DB_NAME
 from src.api import get_companie_info, get_vacancies
-from src.database import create_database_if_not_exists, insert_data, save_employer_to_db, save_vacancies_to_db
+from src.database import create_database, insert_data, save_employer_to_db, save_vacancies_to_db
 from src.db_manager import DBManager
 
-if __name__ == "__main__":
-    load_dotenv("database.ini")
-    create_database_if_not_exists()
-    conn = psycopg2.connect(
-        host=DB_HOST,
-        database="kursovaya3",  # Подключаемся к стандартной БД
-        user=DB_USER,
-        password=DB_PASSWORD,
-        port=DB_PORT,
-    )
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+def main() -> None:
+    """Собираем данные о работодателях и вакансиях с hh.ru в базу данных"""
+    # Подключение к БД
+    db_params = {
+        'host': DB_HOST,
+        'database': 'postgres',
+        'user': DB_USER,
+        'password': DB_PASSWORD
+    }
+    db_name = DB_NAME
+
+    # Создание БД
+    create_database(db_params, db_name)
+    db_params['database'] = db_name
+
+    # Подключение к БД и создание таблиц
+    conn = psycopg2.connect(**db_params)
     insert_data(conn)
+
     employer_id = ["1740", "1455", "4233", "1057", "1140", "3529", "2180", "125493", "15478", "64174"]
+
     for employer in employer_id:
         companies = get_companie_info(employer)
         if companies:
             save_employer_to_db(conn, companies)
             vacancies = get_vacancies(employer)
             save_vacancies_to_db(conn, vacancies, employer)
-
     conn.close()
 
+def user_interaction() -> None:
     db_params = {
-        "host": os.getenv("DB_HOST"),
+        "host": DB_HOST,
         "database": "postgres",
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "port": os.getenv("DB_PORT"),
+        "user": DB_USER,
+        "password": DB_PASSWORD,
     }
     db_manager = DBManager(db_params)
 
@@ -93,3 +100,8 @@ if __name__ == "__main__":
             break
         else:
             print("Неверный ввод. Попробуйте снова.")
+
+
+if __name__ == "__main__":
+    main()
+    user_interaction()

@@ -6,27 +6,19 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from config import DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER
 
 
-def create_database_if_not_exists() -> None:
-    """
-    Создание БД если не существует
-    """
+def create_database(params: dict, db_name: str) -> None:
+    """Создание базы данных"""
+    conn = None
     try:
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            database="postgres",  # Подключаемся к стандартной БД
-            user=DB_USER,
-            password=DB_PASSWORD,
-            port=DB_PORT,
-        )
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        # Подключаемся
+        conn = psycopg2.connect(**params)
+        conn.autocommit = True
 
+        # Формирование запроса
         with conn.cursor() as cur:
-            cur.execute(f"DROP DATABASE IF EXISTS {DB_NAME}")  # Удаляем БД
-            cur.execute(f"CREATE DATABASE {DB_NAME}")  # Создаем БД
-        print(f'База "{DB_NAME}" успешно пересоздана!')
+            cur.execute(f'DROP DATABASE IF EXISTS {db_name}')  # Удаляем БД
+            cur.execute(f'CREATE DATABASE {db_name}')  # Создаем БД
 
-    except psycopg2.Error as e:
-        print(f"Error connecting to PostgreSQL: {e}")
     finally:
         if "conn" in locals():
             conn.close()
@@ -62,7 +54,7 @@ def insert_data(conn):
             """
         )
         conn.commit()
-        print("Таблицы 'employers' и 'vacancies' успешно созданы.")
+
 
 
 def save_employer_to_db(conn, employer: Dict) -> None:
@@ -83,11 +75,11 @@ def save_employer_to_db(conn, employer: Dict) -> None:
                 ),
             )
         conn.commit()
-        print(f"Работодатель '{employer['name']}' сохранен в БД > 'employers'.")
+
 
     except psycopg2.Error as e:
         conn.rollback()
-        print(f"Ошибка при создании работодателя {employer.get('name')}: {e}")
+
         raise
 
 
@@ -120,9 +112,9 @@ def save_vacancies_to_db(conn, vacancies: List[Dict], employer_id: str) -> None:
                     ),
                 )
         conn.commit()
-        print(f"Сохранено {len(vacancies)} вакансий для работодателя '{employer_name}' в БД > 'vacancies'")
+
 
     except psycopg2.Error as e:
         conn.rellback()
-        print(f"Ошибка при сохранении вакансии: {e}")
+
         raise
